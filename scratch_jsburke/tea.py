@@ -9,7 +9,7 @@ from sklearn import preprocessing
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-exit_count = 50000
+exit_count = 10000
 ids = []
 business_info = []
 
@@ -17,7 +17,10 @@ with open("../yelp_academic_dataset_business.json") as business_json:
 	for line in business_json:
 		business = json.loads(line)
 		if business['categories'] is not None:
-			if 'Coffee & Tea' in business['categories']:
+			if 'Food' in business['categories']:
+				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+				ids.append(business['business_id'])
+			if 'Restaurants' in business['categories']:
 				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
 				ids.append(business['business_id'])
 
@@ -48,7 +51,7 @@ info = pd.merge(business_info, review_info, how='inner', on='business_id')
 
 info.head()
 
-info.to_csv('tea.csv', encoding='utf-8')
+info.to_csv('others.csv', encoding='utf-8')
 
 print("complete coffee and tea")
 
