@@ -9,7 +9,7 @@ from sklearn import preprocessing
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-exit_count = 10000
+exit_count = 50000
 ids = []
 business_info = []
 
@@ -36,7 +36,7 @@ with open('../yelp_academic_dataset_review.json') as review_json:
         if count >= exit_count:
         	break
 
-print('reviews found')
+print('reviews found : %d'%len(review_info))
 
 business_info = pd.DataFrame(business_info)
 
