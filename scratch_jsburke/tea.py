@@ -48,6 +48,8 @@ info = pd.merge(business_info, review_info, how='inner', on='business_id')
 
 info.head()
 
+info.to_csv('tea.csv', encoding='utf-8')
+
 print("complete coffee and tea")
 
 # vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8,
