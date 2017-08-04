@@ -23,8 +23,6 @@ with open("../yelp_academic_dataset_business.json") as business_json:
 				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
 				ids.append(business['business_id'])
 
-print('business data set done')
-
 review_info = []
 with open('../yelp_academic_dataset_review.json') as review_json:
     for line in review_json:
@@ -34,8 +32,6 @@ with open('../yelp_academic_dataset_review.json') as review_json:
                                 'review': review['text'].replace('?', '')
                                 .replace(',', '').replace('.', '')})
 
-print('reviews complete')
-
 business_info = pd.DataFrame(business_info)
 
 review_info = pd.DataFrame(review_info)
@@ -44,9 +40,9 @@ review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
 
 info = pd.merge(business_info, review_info, how='inner', on='business_id')
 
-print('merge complete')
+info.head()
 
-info.head()            
+info.to_csv('yelp_extract.csv')
 # print("business id :  raing")
 # for business in business_info:
 #	 print("%s : %.2f" % (business['business_id'], business['rating']))
