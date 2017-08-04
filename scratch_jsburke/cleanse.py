@@ -16,9 +16,13 @@ with open("../yelp_academic_dataset_business.json") as business_json:
 		business = json.loads(line)
 		if business['categories'] is not None:
 			if 'Restaurants' in business['categories']:
-				bus_app(business)
+				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
 			elif 'Food' in business['categories']:
-				bus_app(business)
+				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+
+print("business id :  raing")
+for business in business_info:
+	print("%s : %.2f" % (business['business_id'], business['rating']))
 
 		# thoughts meanderings, super tired, to be with john
 
