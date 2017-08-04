@@ -42,29 +42,15 @@ info = pd.merge(business_info, review_info, how='inner', on='business_id')
 
 info.head()
 
-info.to_csv('yelp_extract.csv')
-# print("business id :  raing")
-# for business in business_info:
-#	 print("%s : %.2f" % (business['business_id'], business['rating']))
+vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8,
+                             max_features=1000, ngram_range=(1,2))
+dtm = vectorizer.fit_transform(info.review.values).toarray()
 
-
-
-		# thoughts meanderings, super tired, to be with john
-
-		# if 'Restaurants' in business['categories']:
-		# 	# print('Restaurants' in business['categories'])
-		# 	print(True)
-		# else:
-		# 	continue
-
-		#if business['stars'] >= 3.6:
-		#	last_good = business
-
-# print(last_good)
-# type(last_good['categories'])
-
-		#print('Restaurants' in business['categories'])
-
-		# if 'Restaurants' in business['categories']:
-		# 	ids.append(business['business_id'])
-		# 	business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+X = dtm
+le = preprocessing.LabelEncoder()
+y = le.fit_transform(info.rating.values)
+train_set_size = 19979
+X_train = X[:train_set_size]
+y_train = y[:train_set_size]
+X_test = X[train_set_size:]
+y_test = y[train_set_size:]
