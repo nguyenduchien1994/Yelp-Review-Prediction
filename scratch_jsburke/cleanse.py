@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json
 import numpy as numpy
 import scipy
@@ -9,7 +11,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 ids = []
 business_info = []
-rest_ctr = 0
 
 with open("../yelp_academic_dataset_business.json") as business_json:
 	for line in business_json:
@@ -17,12 +18,40 @@ with open("../yelp_academic_dataset_business.json") as business_json:
 		if business['categories'] is not None:
 			if 'Restaurants' in business['categories']:
 				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+				ids.append(business['business_id'])
 			elif 'Food' in business['categories']:
 				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+				ids.append(business['business_id'])
 
-print("business id :  raing")
-for business in business_info:
-	print("%s : %.2f" % (business['business_id'], business['rating']))
+print('business data set done')
+
+review_info = []
+with open('../yelp_academic_dataset_review.json') as review_json:
+    for line in review_json:
+        review = json.loads(line)
+        if review['business_id'] in ids:
+            review_info.append({'business_id': review['business_id'],
+                                'review': review['text'].replace('?', '')
+                                .replace(',', '').replace('.', '')})
+
+print('reviews complete')
+
+business_info = pd.DataFrame(business_info)
+
+review_info = pd.DataFrame(review_info)
+review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
+                           .apply(lambda x: x.sum())).reset_index()
+
+info = pd.merge(business_info, review_info, how='inner', on='business_id')
+
+print('merge complete')
+
+info.head()            
+# print("business id :  raing")
+# for business in business_info:
+#	 print("%s : %.2f" % (business['business_id'], business['rating']))
+
+
 
 		# thoughts meanderings, super tired, to be with john
 
