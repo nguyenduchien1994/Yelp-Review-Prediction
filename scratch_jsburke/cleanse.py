@@ -19,7 +19,7 @@ with open("../yelp_academic_dataset_business.json") as business_json:
 			if 'Food' in business['categories']:
 				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
 				ids.append(business['business_id'])
-			if 'Restaurants' in business['categories']:
+			elif 'Restaurants' in business['categories']:
 				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
 				ids.append(business['business_id'])
 
