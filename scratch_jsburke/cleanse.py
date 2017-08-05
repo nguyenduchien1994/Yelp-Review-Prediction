@@ -128,17 +128,23 @@ def main():
 
 	info.to_csv('business_train.csv', encoding='utf-8')
 
-# vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8,
-#                              max_features=1000, ngram_range=(1,2))
-# dtm = vectorizer.fit_transform(info.review.values).toarray()
+	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8,
+	                             max_features=1000, ngram_range=(1,2))
+	dtm = vectorizer.fit_transform(info.review.values).toarray()
 
-# X = dtm
-# le = preprocessing.LabelEncoder()
-# y = le.fit_transform(info.rating.values)
-# train_set_size = 19979
-# X_train = X[:train_set_size]
-# y_train = y[:train_set_size]
-# X_test = X[train_set_size:]
-# y_test = y[train_set_size:]
+	X = dtm
+	le = preprocessing.LabelEncoder()
+	y = le.fit_transform(info.rating.values)
+	train_set_size = 400
+	X_train = X[:train_set_size]
+	y_train = y[:train_set_size]
+	X_test = X[train_set_size:]
+	y_test = y[train_set_size:]
+
+	print(X[11])
+	print(y[11])
+
+	print(X[42])
+	print(y[42])
 
 main()
