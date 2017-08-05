@@ -1,4 +1,19 @@
 #!/usr/bin/env python
+#------------------------------------------------
+#
+#------------------------------------------------
+#
+#	-h --help			Display this message
+#
+#	-q --quiet 			supress output
+#	-v --verbose 		chatty
+#
+#	-b --businesses 	set number of businesses tracked (default 500)
+#	-r --reviews 		set number of reviews tracked 	 (default 500,000)
+#
+#   It seems 500 times more reviews picked than businesses gets a good coverage
+#
+#	
 
 import json
 import numpy as numpy
@@ -9,48 +24,109 @@ from sklearn import preprocessing
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-ids = []
-business_info = []
+import os, sys, argparse
 
-with open("../yelp_academic_dataset_business.json") as business_json:
-	for line in business_json:
-		business = json.loads(line)
-		if business['categories'] is not None:
-			if 'Food' in business['categories']:
-				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
-				ids.append(business['business_id'])
-			elif 'Restaurants' in business['categories']:
-				business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
-				ids.append(business['business_id'])
+#--------------------------------------------------------
+# Command Line
+#--------------------------------------------------------
 
-print('tea found')
+class parse_defined_error(argparse.ArgumentParser):
+	def error(self, msg = ""):
+		if(msg): print("\nERROR: %s\n" % msg)
+		file = open(sys.argv[0])
+		for (lineNum, line) in enumerate(file):
+			if(line[0] != "#"): sys.exit(msg != "")
+			if((lineNum == 2) or (lineNum >= 4)): print(line[1:].rstrip("\n"))
 
-count = 0
-review_info = []
-with open('../yelp_academic_dataset_review.json') as review_json:
-    for line in review_json:
-    	count += 1
-        review = json.loads(line)
-        if review['business_id'] in ids:
-            review_info.append({'business_id': review['business_id'],
-                                'review': review['text'].replace('?', '')
-                                .replace(',', '').replace('.', '')})
+def parse_cmd():
+	parser = parse_defined_error(add_help = False)
 
-print('reviews found : %d'%len(review_info))
+	# Normal Args
 
-business_info = pd.DataFrame(business_info)
+	parser.add_argument("-h", "--help", action = "store_true")
 
-review_info = pd.DataFrame(review_info)
-review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
-                           .apply(lambda x: x.sum())).reset_index()
+	#maybe implement later
+	# Quiet <--> Verbose
+	response = parser.add_mutually_exclusive_group()
 
-info = pd.merge(business_info, review_info, how='inner', on='business_id')
+	response.add_argument("-v", "--verbose", action = "store_true")
+	response.add_argument("-q", "--quiet",   action = "store_true")
 
-info.head()
+	# Additional Args
 
-info.to_csv('others.csv', encoding='utf-8')
+	parser.add_argument("-b", "--businesses",  type = int)
+	parser.add_argument("-r", "--reviews",  type = int)
 
-print("complete coffee and tea")
+	options = parser.parse_args()
+	if options.help:
+		parser.error()
+		sys.exit()
+	return options
+
+#-------------------------------------------------------
+#  code we care about
+#-------------------------------------------------------
+
+def main():
+
+	business_count = 500
+	reviews_count  = 500000
+	ids = []
+	business_info = []
+
+	options=parse_cmd()
+
+	if (options.businesses):
+		business_count = options.businesses
+
+	if (options.reviews):
+		reviews_count = options.reviews	
+
+	count = 0
+	with open("../yelp_academic_dataset_business.json") as business_json:
+		for line in business_json:
+			business = json.loads(line)
+			if business['categories'] is not None:
+				if 'Food' in business['categories']:
+					business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+					ids.append(business['business_id'])
+					count += 1
+				elif 'Restaurants' in business['categories']:
+					business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+					ids.append(business['business_id'])
+					count += 1
+			if count >= business_count:
+				break
+
+	print('businesses found : %d'%len(ids))
+
+	review_info = []
+	count = 0
+	with open('../yelp_academic_dataset_review.json') as review_json:
+	    for line in review_json:
+	    	count += 1
+	        review = json.loads(line)
+	        if review['business_id'] in ids:
+				count += 1
+				review_info.append({'business_id': review['business_id'],
+	                                'review': review['text'].replace('?', '')
+	                                .replace(',', '').replace('.', '')})
+	        if count >= reviews_count:
+	        	break
+
+	print('reviews found : %d'%len(review_info))
+
+	business_info = pd.DataFrame(business_info)
+
+	review_info = pd.DataFrame(review_info)
+	review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
+	                           .apply(lambda x: x.sum())).reset_index()
+
+	info = pd.merge(business_info, review_info, how='inner', on='business_id')
+
+	info.head()
+
+	info.to_csv('business_train.csv', encoding='utf-8')
 
 # vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8,
 #                              max_features=1000, ngram_range=(1,2))
@@ -64,3 +140,5 @@ print("complete coffee and tea")
 # y_train = y[:train_set_size]
 # X_test = X[train_set_size:]
 # y_test = y[train_set_size:]
+
+main()
