@@ -122,8 +122,8 @@ def main():
 	    	count += 1
 	        review = json.loads(line)
 	        if review['business_id'] in ids:
-				count += 1
 				review_info.append({'business_id': review['business_id'],
+									'rating' : review['stars'],
 	                                'review': review['text'].replace('?', '')
 	                                .replace(',', '').replace('.', '')})
 	        if count >= reviews_count:
@@ -134,32 +134,31 @@ def main():
 	business_info = pd.DataFrame(business_info)
 
 	review_info = pd.DataFrame(review_info)
-	review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
-	                           .apply(lambda x: x.sum())).reset_index()
+	#review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
+	                           # .apply(lambda x: x.sum())).reset_index()
 
-	info = pd.merge(business_info, review_info, how='inner', on='business_id')
+	# info = pd.merge(business_info, review_info, how='inner', on='business_id')
 
-	info.head()
+	# info.head()
 
 	if wrt_csv == 1:
-		info.to_csv('business_train.csv', encoding='utf-8')
+		review_info.to_csv('business_train.csv', encoding='utf-8')
 
-	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8,
-	                             max_features=1000, ngram_range=(1,2))
-	dtm = vectorizer.fit_transform(info.review.values).toarray()
+	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8, max_features=1000, ngram_range=(1,2))
+	# dtm = vectorizer.fit_transform(info.review.values).toarray()
 
-	X = dtm
-	le = preprocessing.LabelEncoder()
-	y = le.fit_transform(info.rating.values)
-	X_train = X[:train_set_size]
-	y_train = y[:train_set_size]
-	X_test = X[train_set_size:]
-	y_test = y[train_set_size:]
+	# X = dtm
+	# le = preprocessing.LabelEncoder()
+	# y = le.fit_transform(info.rating.values)
+	# X_train = X[:train_set_size]
+	# y_train = y[:train_set_size]
+	# X_test = X[train_set_size:]
+	# y_test = y[train_set_size:]
 
-	print(X[11])
-	print(y[11])
+	# print(X[11])
+	# print(y[11])
 
-	print(X[42])
-	print(y[42])
+	# print(X[42])
+	# print(y[42])
 
 main()
