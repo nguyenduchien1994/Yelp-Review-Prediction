@@ -165,7 +165,7 @@ def main():
 
 	print('predict -- real')
 	for i in range(len(preds)):
-		print('%d     --  %d'% preds(i+1), y_test(i+1))
+		print(preds[i+1] + '  --  ' + y_test[i+1])
 
 
 	# print(X[11])
