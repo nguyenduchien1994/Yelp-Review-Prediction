@@ -163,9 +163,21 @@ def main():
 
 	preds = mlp_nn.predict(X_test)
 
+	good = 0
+	count = 0
+
 	print('predict -- real')
-	for i in range(len(preds)):
-		print(preds[i+1] + '  --  ' + y_test[i+1])
+	for i in range(len(preds)-10):
+		count += 1
+		# print(preds[i+1] + '  --  ' + y_test[i+1])
+		if preds[i+1] == y_test[i+1]:
+			# print('good')
+			good += 1
+		# else:
+		# 	print('XXX')
+
+	print('good  : %d'%good)
+	print('total : %d'%count)
 
 
 	# print(X[11])
