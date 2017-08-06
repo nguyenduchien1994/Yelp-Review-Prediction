@@ -10,7 +10,7 @@
 #
 #	-b --businesses 	set number of businesses tracked    (default 500)
 #	-r --reviews 		set number of reviews tracked 	    (default 500,000)
-#   -w --write			writes output to file {'on', 'off'} (default on)
+#   -w --write			writes output to file {'on', 'off'} (default off)
 #
 #   It seems 500 times more reviews picked than businesses gets a good coverage
 #
@@ -24,6 +24,7 @@ import sklearn.metrics as metrics
 from sklearn import preprocessing
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neural_network import MLPClassifier
 
 import os, sys, argparse
 
@@ -91,8 +92,8 @@ def main():
 	if (options.train):
 		train_set_size = options.train
 
-	if (options.write == 'off'):
-		wrt_csv = 0
+	if (options.write == 'on'):
+		wrt_csv = 1
 
 	cities = ['Pittsburgh', 'Charlotte', 'Phoenix', 'Urbana']
 
@@ -145,15 +146,27 @@ def main():
 		review_info.to_csv('business_train.csv', encoding='utf-8')
 
 	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8, max_features=1000, ngram_range=(1,2))
-	# dtm = vectorizer.fit_transform(info.review.values).toarray()
+	dtm = vectorizer.fit_transform(review_info.review.values).toarray()
 
-	# X = dtm
-	# le = preprocessing.LabelEncoder()
-	# y = le.fit_transform(info.rating.values)
-	# X_train = X[:train_set_size]
-	# y_train = y[:train_set_size]
-	# X_test = X[train_set_size:]
-	# y_test = y[train_set_size:]
+	X = dtm
+	le = preprocessing.LabelEncoder()
+	y = le.fit_transform(review_info.rating.values)
+	X_train = X[:train_set_size]
+	y_train = y[:train_set_size]
+	X_test = X[train_set_size:]
+	y_test = y[train_set_size:]
+
+	preds = []
+
+	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(15,2))
+	mlp_nn.fit(X_train, y_train)
+
+	preds = mlp_nn.predict(X_test)
+
+	print('predict -- real')
+	for i in range(len(preds)):
+		print('%d     --  %d'% preds(i+1), y_test(i+1))
+
 
 	# print(X[11])
 	# print(y[11])
