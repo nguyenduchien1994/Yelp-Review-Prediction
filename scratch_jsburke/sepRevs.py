@@ -158,10 +158,10 @@ def main():
 
 	preds = []
 
-	hl_len = len(dtm[1])-10
+	hl_len = len(dtm[1])-5
 	print("hl neurons : %d"%hl_len)
 
-	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len,10))
+	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-10,hl_len-15))
 	mlp_nn.fit(X_train, y_train)
 
 	preds = mlp_nn.predict(X_test)
