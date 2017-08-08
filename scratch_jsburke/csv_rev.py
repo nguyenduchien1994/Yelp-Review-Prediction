@@ -188,7 +188,7 @@ def main():
 	# mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-20))
 	# 50.3%
 
-	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len-10,hl_len-15))
+	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-15))
 
 	mlp_nn.fit(X_train, y_train)
 
