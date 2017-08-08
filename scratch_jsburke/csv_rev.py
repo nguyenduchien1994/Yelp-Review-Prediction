@@ -95,46 +95,46 @@ def main():
 	if (options.write == 'on'):
 		wrt_csv = 1
 
-	cities = ['Pittsburgh', 'Charlotte', 'Phoenix', 'Urbana']
+	# cities = ['Pittsburgh', 'Charlotte', 'Phoenix', 'Urbana']
 
-	count = 0
-	with open("../yelp_academic_dataset_business.json") as business_json:
-		for line in business_json:
-			business = json.loads(line)
-			if business['categories'] is not None:
-				if business['city'] in cities:
-					if 'Food' in business['categories']:
-						business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
-						ids.append(business['business_id'])
-						count += 1
-					elif 'Restaurants' in business['categories']:
-						business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
-						ids.append(business['business_id'])
-						count += 1
-			if count >= business_count:
-				break
+	# count = 0
+	# with open("../yelp_academic_dataset_business.json") as business_json:
+	# 	for line in business_json:
+	# 		business = json.loads(line)
+	# 		if business['categories'] is not None:
+	# 			if business['city'] in cities:
+	# 				if 'Food' in business['categories']:
+	# 					business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+	# 					ids.append(business['business_id'])
+	# 					count += 1
+	# 				elif 'Restaurants' in business['categories']:
+	# 					business_info.append({'business_id': business['business_id'], 'rating': business['stars']})
+	# 					ids.append(business['business_id'])
+	# 					count += 1
+	# 		if count >= business_count:
+	# 			break
 
-	print('businesses found : %d'%len(ids))
+	# print('businesses found : %d'%len(ids))
 
-	review_info = []
-	count = 0
-	with open('../yelp_academic_dataset_review.json') as review_json:
-	    for line in review_json:
-	    	count += 1
-	        review = json.loads(line)
-	        if review['business_id'] in ids:
-				review_info.append({'business_id': review['business_id'],
-									'rating' : review['stars'],
-	                                'review': review['text'].replace('?', '')
-	                                .replace(',', '').replace('.', '')})
-	        if count >= reviews_count:
-	        	break
+	# review_info = []
+	# count = 0
+	# with open('../yelp_academic_dataset_review.json') as review_json:
+	#     for line in review_json:
+	#     	count += 1
+	#         review = json.loads(line)
+	#         if review['business_id'] in ids:
+	# 			review_info.append({'business_id': review['business_id'],
+	# 								'rating' : review['stars'],
+	#                                 'review': review['text'].replace('?', '')
+	#                                 .replace(',', '').replace('.', '')})
+	#         if count >= reviews_count:
+	#         	break
 
-	print('reviews found : %d'%len(review_info))
+	# print('reviews found : %d'%len(review_info))
 
-	business_info = pd.DataFrame(business_info)
+	# business_info = pd.DataFrame(business_info)
 
-	review_info = pd.DataFrame(review_info)
+	# review_info = pd.DataFrame(review_info)
 	#review_info = pd.DataFrame(review_info.groupby('business_id')['review'] \
 	                           # .apply(lambda x: x.sum())).reset_index()
 
@@ -142,8 +142,10 @@ def main():
 
 	# info.head()
 
-	if wrt_csv == 1:
-		review_info.to_csv('business_train.csv', encoding='utf-8')
+	# if wrt_csv == 1:
+	# 	review_info.to_csv('business_train.csv', encoding='utf-8')
+
+	pd.read_csv('../reviews.csv')
 
 	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8, max_features=1000, ngram_range=(1,2))
 	dtm = vectorizer.fit_transform(review_info.review.values).toarray()
