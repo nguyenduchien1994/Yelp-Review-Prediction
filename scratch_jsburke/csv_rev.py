@@ -75,11 +75,12 @@ def parse_cmd():
 def main():
 
 	business_count = 500
-	reviews_count  = 500000
+	reviews_count  = 50000
 	ids = []
 	business_info = []
 	wrt_csv = 1
-	train_set_size = 400
+	train_set_size = 40000
+	verbose = 0
 
 	options=parse_cmd()
 
@@ -94,6 +95,9 @@ def main():
 
 	if (options.write == 'on'):
 		wrt_csv = 1
+
+	if options.verbose:
+		verbose = 1
 
 	# cities = ['Pittsburgh', 'Charlotte', 'Phoenix', 'Urbana']
 
@@ -145,10 +149,16 @@ def main():
 	# if wrt_csv == 1:
 	# 	review_info.to_csv('business_train.csv', encoding='utf-8')
 
-	pd.read_csv('../reviews.csv')
+	review_info = pd.read_csv('../reviews.csv', nrows=reviews_count)
+
+	if verbose == 1:
+		print("file read done")
 
 	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8, max_features=1000, ngram_range=(1,2))
 	dtm = vectorizer.fit_transform(review_info.review.values).toarray()
+
+	if verbose == 1:
+		print("tfidf done")
 
 	X = dtm
 	le = preprocessing.LabelEncoder()
@@ -158,13 +168,32 @@ def main():
 	X_test = X[train_set_size:]
 	y_test = y[train_set_size:]
 
+	if verbose == 1:
+		print("data sets established")
+
 	preds = []
 
 	hl_len = len(dtm[1])-5
 	print("hl neurons : %d"%hl_len)
 
-	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-10,hl_len-15))
+	# mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-10,hl_len-15))
+	# 49%
+
+	# mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-15))
+	# 50%
+
+	# mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-5,hl_len-10))
+	# 42%
+
+	# mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-20))
+	# 50.3%
+
+	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len-10,hl_len-15))
+
 	mlp_nn.fit(X_train, y_train)
+
+	if verbose == 1:
+		print("NN trained")
 
 	preds = mlp_nn.predict(X_test)
 
