@@ -22,6 +22,7 @@ import scipy
 import pandas as pd 
 import sklearn.metrics as metrics
 from sklearn import preprocessing
+from sklearn.utils import shuffle
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neural_network import MLPClassifier
@@ -149,24 +150,35 @@ def main():
 	# if wrt_csv == 1:
 	# 	review_info.to_csv('business_train.csv', encoding='utf-8')
 
-	review_info = pd.read_csv('../reviews.csv', nrows=reviews_count)
+	review_info = pd.read_csv('../reviews.csv', encoding='ISO-8859-1')
+
+	# Create balanced distribution of samples
+	d = {}
+	labels = []
+	features = []
+	for i in range(review_info.shape[0]):
+	    if review_info.rating[i] in d and d[review_info.rating[i]] < 10000:
+	        d[review_info.rating[i]] += 1
+	        labels.append(review_info.rating[i])
+	        features.append(review_info.review[i])
+	    elif review_info.rating[i] not in d:
+	        d[review_info.rating[i]] = 0        
+
+	# Shuffle lists
+	features, labels = shuffle(features, labels)
 
 	if verbose == 1:
 		print("file read done")
 
-	vectorizer = TfidfVectorizer(stop_words='english', min_df=0.1, max_df=0.8, max_features=1000, ngram_range=(1,2))
-	dtm = vectorizer.fit_transform(review_info.review.values).toarray()
+	vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1,2))
+	dtm = vectorizer.fit_transform(features)
 
 	if verbose == 1:
 		print("tfidf done")
 
 	X = dtm
-	le = preprocessing.LabelEncoder()
-	y = le.fit_transform(review_info.rating.values)
-	X_train = X[:train_set_size]
-	y_train = y[:train_set_size]
-	X_test = X[train_set_size:]
-	y_test = y[train_set_size:]
+	y = labels
+	X_train, X_test, y_train, y_test = train_test_split(dtm, labels, test_size=0.20)
 
 	if verbose == 1:
 		print("data sets established")
@@ -188,7 +200,7 @@ def main():
 	# mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-20))
 	# 50.3%
 
-	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len,hl_len-15))
+	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', alpha=1e-5, hidden_layer_sizes=(hl_len/2))
 
 	mlp_nn.fit(X_train, y_train)
 
