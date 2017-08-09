@@ -1,0 +1,313 @@
+\documentclass{beamer}
+
+\title{Berkeley Out of Order Machine Overview}
+\author{John S Burke}
+\institute{Boston University ECE}
+\date{\today}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{subfigure}
+
+\begin{document}
+
+\begin{frame}
+\titlepage % beamer's \maketitle
+\end{frame}
+
+\frame{\frametitle{Basics of BOOM}
+\begin{itemize}
+	\item Uses RISCV64G with MAFD extensions
+	\item \begin{itemize}
+		\item Multiply - Divide
+		\item AMOs
+		\item load-reserve \& store conditional
+		\item single \& double precision floating point
+		\end{itemize}
+	\item Relaxed memory model
+	\item Accrued Floating Point Exception Flags
+	\item No Integer Side Effects
+	\item No Predication because of overhead in OoO
+	\item No Implicit Registers or Specifiers
+	\item No Present Support for RISC-V Vector or Compressed Modes
+	\item 10 stage pipeline, 6 stages after combining and parallelizing
+\end{itemize}
+}
+
+\frame{\frametitle{Basics Continued}
+\begin{itemize}
+	\item BOOM is designed to use the Rocket-chip SoC generator
+	\item \begin{itemize}
+		\item BOOM is not a full processor
+		\item Instantiated by replacing a rocket tile with a BOOM tile
+	\end{itemize}
+	\item Treats rocket as a library of components, such as caches and TLBs
+\end{itemize}
+
+\begin{center}
+	\includegraphics[scale=.35]{boom_tile}
+\end{center}
+}
+
+\frame{\frametitle{The Pipeline}
+	\begin{center}
+		\includegraphics[scale=0.45]{Boom_proc}
+	\end{center}
+
+}
+
+\frame{\frametitle{Stages of the Pipeline}
+\begin{tabular}{|l|}
+	\hline
+	Fetch  \\ \hline
+	Decode \\
+	Rename \\
+	Dispatch \\ \hline
+	Issue  \\
+	Register Read \\ \hline
+	Execute \\ \hline
+	Memory \\ \hline
+	Write Back \\ \hline
+	Commit*\\ \hline
+\end{tabular}
+
+\vspace{5mm} Commit happens asynchronously, so it isn't considered part of the pipeline strictly
+
+}
+
+\frame{\frametitle{Fetch}
+	\begin{center}
+		\includegraphics[scale=0.4]{boom_fetch}
+	\end{center}
+	\begin{itemize}
+		\item Large portion, The Front End, taken from Rocket
+		\item Superscalar Fetch support, gets \textit{Fetch Packets}
+		\item Instruction Cache from Rocket, virtually indexed, physically tagged and set associative
+		\item Fixed number of bytes read to a register, only fired again when register is dry; 4 bytes per instruction by RV64G
+		\item No support for hit-under-miss
+		\item Fetch Buffer stores packets from I\$ ,dcouples front and back end
+	\end{itemize}
+}
+
+\frame{\frametitle{Branch Prediction}
+\begin{itemize}
+	\item 2 Levels -- Next Line Predictor (NLP) and Backing Predictor (BPD)
+	\item NLP from Rocket, single cycle
+	\item BPD Slower but more complex
+\end{itemize}
+}
+
+\frame{\frametitle{Next Line Predictor}
+\begin{itemize}
+ \item From Rocket
+ \item Uses current Fetch PC to combinationally predict next instruction load address
+ \item Uses Fetch PC to tag match in BTB
+ \item On Hit, BHT and Return Address Stack (RAS) are consulted
+ \item A \texttt{RET} will cause RAS to take control
+ \item Unconditional Jumps ignore BHT
+\end{itemize}
+}
+
+\frame{\frametitle{Updates}
+\begin{itemize}
+	\item BTB updates when Fetch Unit is redirected to by the Branch Unit (Execute) or Backing Predictor (Branch Prediction)
+	\item New entry is allocated if not in BTB
+	\item BHT Updates 2 elements: a global history register (ghistory) and table of history counters
+	\item ghistory updates in BP stage
+	\item ghistory updates in Execute on mispredictions, reset with correct outcomes
+	\item History counters update with ghistory
+	\item They are passed down the pipeline, and reset on misprediction
+	\item All updates from BP stage are in-order
+\end{itemize}
+}
+
+\frame{\frametitle{RAS Updates}
+\begin{itemize}
+	\item Done after a packet is decoded
+	\item If a \texttt{CALL} is detected, return address pushed on RAS
+	\item Popped on a \texttt{RET}
+\end{itemize}
+}
+
+\frame{\frametitle{Backing Predictor}
+	\begin{itemize}
+		\item BPD tries to support NLP with high accuracy and density
+		\item Slower than NLP
+		\item No predictions until packet is decoded and branch targets are calculated
+		\item Works parallel to I\$
+		
+	\end{itemize}
+}
+
+\frame{\frametitle{BPD Functionality}
+\begin{itemize}
+	\item Provides if it is making a prediction and the vector of taken/not-taken predictions
+	\item May not provide predictions for validity reasons or to avoid structural hazards
+	\item Will only guess taken/not-taken for conditional branches
+	\item Updated in Commit to avoid bad path information
+	\item Does get quasi-update in Execute on mispredict because of ghistory
+\end{itemize}
+}
+
+\frame{\frametitle{Branching Reorder Buffer (BROB)}
+\begin{itemize}
+	\item Records all in-flight branch predictions
+	\item Decoupled from ROB since ROB is not cheap and branches are roughly 1:6 instructions
+	\item Each entry is a superscalar branch prediction
+	\item Deallocates in Commit, updates in Branch Predict Stage
+	\item BOOM does not support BROB Bypassing 
+\end{itemize}
+}
+
+\frame{\frametitle{Decode}
+\begin{itemize}
+	\item Reads from Fetch Buffer
+	\item Decodes the instructions in a packet
+	\item Allocates needed resources
+	\item Will stall when resources are insufficient
+\end{itemize}
+}
+
+\frame{\frametitle{Rename}
+\begin{itemize}
+	\item Uses a Physical Register File, Map Table, and Free List to Map physical to ISA registers
+	\item Speculative data not in ROB, all explicit
+	\item Each Branch gets its own Map Table, used to correct it on mispredict
+	\item Map Table can be read before Decode is complete because of consistent Register Locations in Instructions
+	\item Resets in a single cycle on exceptions or flushes
+	\item Free List uses a bit Vector for availability
+	\item BOOM uses cascading priority so that multiple can be allocated at once
+	\item Branches and \texttt{JALR} snapshot the Free List for single cycle recovery
+\end{itemize}
+}
+
+\frame{\frametitle{ROB and Dispatch}
+\begin{itemize}
+	\item ROB tracks in-flight instructions
+	\item Circular Buffer of variable width
+	\item Each Cycle, a set number of instructions from the fetch packet are dispatched to the ROB
+	\item Branches cause bubbles in ROB
+	\item Adding more instructions to ROB is relatively cheap
+\end{itemize}
+
+	\begin{center}
+		\includegraphics[scale=0.4]{boom_rob}
+	\end{center}
+}
+
+\frame{\frametitle{Issue Unit}
+\begin{itemize}
+	\item Currently no support of speculative issue of micro-ops
+	\item Micro-ops are dispatched into an \textit{Issue Window}
+	\item Wait for all resources to be ready
+	\item Assert request to issue when ready
+	\item Unavailability and deassertions will cause micro-ops to not issue
+	\item Two Scheduling policies in BOOM: one like MIPS R10k and Age ordering
+\end{itemize}
+}
+
+\frame{\frametitle{Register File}
+\begin{itemize}
+	\item PRF holds committed and speculative states
+	\item Stores both integer and floating point
+	\item Each entry is 65 bits wide because of Berkeley Hardfloats
+	\item Register Read Stage provisions all read ports needed by issuing instructions
+	\item Bypassing ALU back-to-back instructions occurs at end of register read stage
+\end{itemize}
+}
+
+\frame{\frametitle{Execute}
+\begin{itemize}
+	\item Covers Execution and Write Back of instructions
+	\item Comprises multiple paths of potentially differing Execute Units
+	\item Execute Units contain a variety of Functional Units
+	\item Functional Units are an abstract class of machines that are dedicated to specific operations or groups of operations
+\end{itemize}
+}
+
+\frame{\frametitle{Funcitonal Units}
+\begin{itemize}
+	\item Two kinds, Pipelined and unpipelined
+	\item Pipelined can accept a new micro-op every cycle, has known latency
+	\item Unpipelined are variable latency, operate until complete
+	\item Unpipelined Functional Units must have a kill signal for misspeculation
+\end{itemize}
+}
+
+\frame{\frametitle{Branch Unit and Load Store Unit}
+\begin{itemize}
+	\item In Execute, handles resolution of all branches and jumps
+	\item If speculation was good, only have to broadcast an OK signal to dependent micro-ops
+	\item BOOM only supports one Branch unit for now
+	\item LSU handles memory operations
+	\item Also only one allowed in BOOM
+\end{itemize}
+}
+
+\frame{\frametitle{FPUs}
+\begin{itemize}
+	\item Uses Berkeley Hardfloat units (65 bit floats)
+	\item All Pipelined units are padded to same latency
+	\item Divide and squareroot use \texttt{divSqrtRecF64} from hardfloat
+	\item Can do a div and sqrt simultaneously
+	\item It provides an unstable FIFO interface
+	\item Single precision upscaled to double for execution, then downscaled  to single again
+\end{itemize}
+}
+
+\frame{\frametitle{Control/Status Register Instructions}
+\begin{itemize}
+	\item Reading and writing may induce side effects
+	\item Often require certain privileges to access
+	\item Can only execute one non-speculatively, done by serialiazation in ROB
+\end{itemize}
+}
+
+\frame{\frametitle{LSU}
+\begin{itemize}
+	\item Stores allocate as needed in SAQ and SDQ in Decode
+	\item Once committed, memory system handles at its own discretion
+	\item Handled in programmatic order
+	\item Loads allocate LAQ in Decode
+	\item Uses store mask for potential dependencies
+	\item Will "succeed" if found in Store queues
+\end{itemize}
+}
+
+\frame{\frametitle{Memory System}
+\begin{itemize}
+	\item Uses Rocket's non-blocking cache (Hellacache)
+	\item Contract with memory is that cache may execute all operations sent to it
+	\item BOOM can speculate loads, so the "shim" tracks all in flight loads and can mark them as misspeculated
+	\item Hellacache uses a lack of a nack to note successful stores
+	\item All requests can be killed as soon as the cycle after it is sent
+\end{itemize}
+}
+
+\frame{\frametitle{Event Tracking}
+\begin{itemize}
+	\item RISC-V 1.9.1 adds Hardware Performance Monitors
+	\item Can be used in BOOM
+	\item Privilege can be set on a per counter basis
+\end{itemize}
+}
+
+\frame{\frametitle{Other Tools}
+\begin{itemize}
+	\item Basic and Torture testing is provided
+	\item Can make traces compatible with 03 Pipeline viewer in the gem5 suite
+	\item A \texttt{plsi} repo on github makes methods for pushing through vlsi tools clear
+	\item Project wants to add vector instructions and RISC-V compressed mode, but there are many challenges present
+\end{itemize}
+}
+
+\frame{\frametitle{Sources}
+\textit{The Berkeley Out-of-Order Machine (BOOM): An Industry-Competitive, Synthesizable, Parameterized RISC-V Processor,} 
+\newline Christopher Celio, David A Patterson, and Krste Asanovic, 
+\newline EECS UC Berkeley, June 2015 \newline
+UCB/EECS-2015-167, \newline{2mm}
+http://www2.eecs.berkeley.edu/Pubs/techrpts/2015/EECS-2015-167.html
+}
+
+\end{document}
