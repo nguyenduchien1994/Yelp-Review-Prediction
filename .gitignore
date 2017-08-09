@@ -1,3 +1,11 @@
 *.json
 *.tgz
 *.csv
+*.aux
+*.dvi
+*.log
+*.lof
+*.lot
+*.out
+*.gz
+*.toc
