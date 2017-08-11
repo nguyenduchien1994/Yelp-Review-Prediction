@@ -74,10 +74,8 @@ def parse_cmd():
 
 	# Additional Args
 
-	# parser.add_argument("-b", "--businesses",  type = int)
 	parser.add_argument("-r", "--reviews",  type = int)
 	parser.add_argument("-t", "--train",  type = float)
-
 	parser.add_argument("-m", "--model",  type = str)
 
 	options = parser.parse_args()
@@ -189,7 +187,7 @@ def main():
 
 	if svm_eval:
 		classifier = MLPClassifier(solver='lbfgs', activation='logistic', tol=1e-4, alpha=1e-5, hidden_layer_sizes=(100))
-		print("Evaluation for SVM\n\n")
+		print("Evaluation for MLP\n\n")
 		model_eval(classifier, X_train, X_test, y_train, y_test)
 
 
