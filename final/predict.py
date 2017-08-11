@@ -11,14 +11,13 @@
 #	-b --businesses 	set number of businesses tracked    (default 500)
 #	-r --reviews 		set number of reviews tracked 	    (default 50,000)
 #	-t --train 			training set size 					(default 40,000)
+#   -m --model          pick svm, mlp, or both              (default both)
+#                       as int {0, 1, 2}
 
 # command line imports
 import os, sys, argparse
 
 # algo imports
-# import json
-# import numpy as numpy
-# import scipy
 import pandas as pd 
 import sklearn.metrics as metrics
 from sklearn import preprocessing
@@ -31,11 +30,22 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neural_network import MLPClassifier
 
 #--------------------------------------------------------
-# Non-Command line params
+# Pseudo Constants
 #--------------------------------------------------------
 
 TFIDF_FEATURES = 1000
 MLP_NEURONS    = 100
+MODE_SVM       = 0
+MODE_MLP       = 1
+MODE_BOTH      = 2
+MODELS         = [MODE_SVM, MODE_MLP, MODE_BOTH]
+
+# Can be modified on command line
+
+REVIEWS_COUNT  = 50000
+TEST_SZ        = 0.20
+MODEL          = MODE_BOTH
+VERBOSE        = False    # default quiet
 
 #--------------------------------------------------------
 # Command Line
@@ -67,9 +77,9 @@ def parse_cmd():
 
 	# parser.add_argument("-b", "--businesses",  type = int)
 	parser.add_argument("-r", "--reviews",  type = int)
-	parser.add_argument("-t", "--train",  type = int)
+	parser.add_argument("-t", "--train",  type = float)
 
-	parser.add_argument("-w", "--write",  type = str)
+	parser.add_argument("-m", "--model",  type = str)
 
 	options = parser.parse_args()
 	if options.help:
@@ -101,7 +111,7 @@ def csv_proc(file, rows):
 
 def tf_idf(info):
 	vectorizer = TfidfVectorizer(stop_words='english', max_features=TFIDF_FEATURES, ngram_range=(1,2))
-	return vectorizer.fit_transform(features)
+	return vectorizer.fit_transform(info)
 
 def accuracy(preds, labels):
 	count = 0
@@ -115,15 +125,68 @@ def model_eval(classifier, x_train, x_test, y_train, y_test):
 	classifier.fit(x_train, y_train)
 	preds = classifier.predict(x_test)
 	print(" Accuracy || MSE\n%.4f%11.4f" % (accuracy(preds, y_test), mean_squared_error(y_test, preds)))
-	
-# def svm_run(x_train, x_test, y_train, y_test):
-# 	classifier = LinearSVC()
-# 	classifier.fit(x_train, y_train)
-# 	preds = classifier.predict(x_test)
-# 	print(" Accuracy || MSE\n%.4f%11.4f" % (accuracy(preds, y_test), mean_squared_error(y_test, preds)))
 
-# def mlp_run(x_train, x_test, y_train, y_test):
-# 	mlp_nn = MLPClassifier(solver='lbfgs', activation='logistic', tol=1e-4, alpha=1e-5, hidden_layer_sizes=(MLP_NEURONS))
-# 	mlp.fit(x_train, y_train)
-# 	preds = mlp.predict(x_test)
-# 	print(" Accuracy || MSE\n%.4f%11.4f" % (accuracy(preds, y_test), mean_squared_error(y_test, preds)))
+#-------------------------------------------------------
+#  Main
+#-------------------------------------------------------
+
+def main():
+
+	svm_eval = True
+	mlp_eval = True
+
+	# First we gather info from the command line
+	options = parse_cmd()
+
+	if (options.reviews):
+		REVIEWS_COUNT = options.reviews	
+
+	if (options.train):
+		TEST_SZ = options.train
+
+	# Manage the modes of evaluations
+	if (options.model):
+		MODEL = options.model
+
+	if MODEL not in MODELS:
+		print("Model not found\n please see help (-h or --help)")
+		sys.exit()
+
+	if MODEL == MODE_SVM:
+		mlp_eval = False
+
+	if MODEL == MODE_MLP:
+		svm_eval = False
+
+	# End model control code
+	if options.verbose:
+		VERBOSE = True
+
+	# process csv into features and labels
+	features, labels = csv_proc('reviews.csv', REVIEWS_COUNT)
+	if VERBOSE:
+		print("File processing complete")
+
+	# produce dtm from data over tfidf
+	dtm = tf_idf(features)
+	if VERBOSE:
+		print("Document Term Matrix created")
+
+	# split data into train-test split
+	X_train, X_test, y_train, y_test = train_test_split(dtm, labels, test_size=TEST_SZ)
+	if VERBOSE:
+		print("Data split into test and train")
+
+	# create the models we want to use and run
+	if svm_eval:
+		classifier = LinearSVC()
+		print("Evaluation for SVM\n\n")
+		model_eval(classifier, X_train, X_test, y_train, y_test)
+
+	if svm_eval:
+		classifier = MLPClassifier(solver='lbfgs', activation='logistic', tol=1e-4, alpha=1e-5, hidden_layer_sizes=(100))
+		print("Evaluation for SVM\n\n")
+		model_eval(classifier, X_train, X_test, y_train, y_test)
+
+
+main()
