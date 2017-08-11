@@ -20,7 +20,7 @@ import scipy
 import pandas as pd 
 import sklearn.metrics as metrics
 from sklearn import preprocessing
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, mean_squared_error
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import shuffle
@@ -101,7 +101,7 @@ def main():
 
 	
 
-	review_info = pd.read_csv('../reviews.csv', nrows=reviews_count)
+	review_info = pd.read_csv('../reviews.csv', nrows=reviews_count, encoding='ISO-8859-1')
 
 	if verbose == 1:
 		print("file read done")
@@ -140,11 +140,11 @@ def main():
 	# y_test = y[train_set_size:]
 
 	# Use ~80% of data for training and ~20% for testing
-	X = dtm
-	y = labels
+	# X = dtm
+	# y = labels
 	X_train, X_test, y_train, y_test = train_test_split(dtm, labels, test_size=0.20)
 
-	
+
 
 	if verbose == 1:
 		print("data sets established")
@@ -158,23 +158,32 @@ def main():
 	if verbose == 1:
 		print("NN trained")
 
+	# print("mlp accuracy : %.4f" % mlp_nn.score(X_test, y_test))
+
 	preds = mlp_nn.predict(X_test)
 
-	good = 0
 	count = 0
+	total = len(preds)
+	for i in range(total):
+		count += 1 if (y_test[i] == preds[i]) else 0
 
-	print('predict -- real')
-	for i in range(len(preds)-1):
-		count += 1
-		# print(preds[i+1] + '  --  ' + y_test[i+1])
-		if preds[i+1] == y_test[i+1]:
-			# print('good')
-			good += 1
-		# else:
-		# 	print('XXX')
+	print("Accuracy || MSE \n %.4f%12.4f" % ((float(count)/float(total)) , mean_squared_error(y_test, preds)))
 
-	print('good  : %d'%good)
-	print('total : %d'%count)
+	# good = 0
+	# count = 0
+
+	# print('predict -- real')
+	# for i in range(len(preds)-1):
+	# 	count += 1
+	# 	# print(preds[i+1] + '  --  ' + y_test[i+1])
+	# 	if preds[i+1] == y_test[i+1]:
+	# 		# print('good')
+	# 		good += 1
+	# 	# else:
+	# 	# 	print('XXX')
+
+	# print('good  : %d'%good)z
+	# print('total : %d'%count)
 
 
 	# print(X[11])
