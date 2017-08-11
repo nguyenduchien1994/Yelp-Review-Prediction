@@ -181,14 +181,14 @@ def main():
 
 	# create the models we want to use and run
 	if svm_eval:
-		classifier = LinearSVC()
+		svm = LinearSVC()
 		print("Evaluation for SVM\n\n")
-		model_eval(classifier, X_train, X_test, y_train, y_test)
+		model_eval(svm, X_train, X_test, y_train, y_test)
 
 	if svm_eval:
-		classifier = MLPClassifier(solver='lbfgs', activation='logistic', tol=1e-4, alpha=1e-5, hidden_layer_sizes=(100))
+		mlp = MLPClassifier(solver='lbfgs', activation='logistic', tol=1e-4, alpha=1e-5, hidden_layer_sizes=(MLP_NEURONS))
 		print("Evaluation for MLP\n\n")
-		model_eval(classifier, X_train, X_test, y_train, y_test)
+		model_eval(mlp, X_train, X_test, y_train, y_test)
 
 
 main()
