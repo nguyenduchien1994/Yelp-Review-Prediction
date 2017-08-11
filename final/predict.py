@@ -8,7 +8,6 @@
 #	-q --quiet 			supress output  					(default quiet)
 #	-v --verbose 		chatty
 #
-#	-b --businesses 	set number of businesses tracked    (default 500)
 #	-r --reviews 		set number of reviews tracked 	    (default 50,000)
 #	-t --train 			training set size 					(default 40,000)
 #   -m --model          pick svm, mlp, or both              (default both)
@@ -25,7 +24,7 @@ from sklearn import svm
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, mean_squared_error
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neural_network import MLPClassifier
 
@@ -116,7 +115,7 @@ def tf_idf(info):
 def accuracy(preds, labels):
 	count = 0
 	total = len(labels)
-	for i in range(total)
+	for i in range(total):
 		count += 1 if (labels[i] == preds[i]) else 0
 	return (float(count)/float(total))
 
@@ -124,7 +123,7 @@ def model_eval(classifier, x_train, x_test, y_train, y_test):
 	classifier = LinearSVC()
 	classifier.fit(x_train, y_train)
 	preds = classifier.predict(x_test)
-	print(" Accuracy || MSE\n%.4f%11.4f" % (accuracy(preds, y_test), mean_squared_error(y_test, preds)))
+	print(" Accuracy || MSE\n%.4f%13.4f" % (accuracy(preds, y_test), mean_squared_error(y_test, preds)))
 
 #-------------------------------------------------------
 #  Main
@@ -135,46 +134,51 @@ def main():
 	svm_eval = True
 	mlp_eval = True
 
+	reviews_count = REVIEWS_COUNT
+	test_sz       = TEST_SZ
+	model         = MODEL
+	verbose       = VERBOSE
+
 	# First we gather info from the command line
 	options = parse_cmd()
 
 	if (options.reviews):
-		REVIEWS_COUNT = options.reviews	
+		reviews_count = options.reviews	
 
 	if (options.train):
-		TEST_SZ = options.train
+		test_sz = options.train
 
 	# Manage the modes of evaluations
 	if (options.model):
-		MODEL = options.model
+		model = options.model
 
-	if MODEL not in MODELS:
+	if model not in MODELS:
 		print("Model not found\n please see help (-h or --help)")
 		sys.exit()
 
-	if MODEL == MODE_SVM:
+	if model == MODE_SVM:
 		mlp_eval = False
 
-	if MODEL == MODE_MLP:
+	if model == MODE_MLP:
 		svm_eval = False
 
 	# End model control code
 	if options.verbose:
-		VERBOSE = True
+		verbose = True
 
 	# process csv into features and labels
-	features, labels = csv_proc('reviews.csv', REVIEWS_COUNT)
-	if VERBOSE:
+	features, labels = csv_proc('reviews.csv', reviews_count)
+	if verbose:
 		print("File processing complete")
 
 	# produce dtm from data over tfidf
 	dtm = tf_idf(features)
-	if VERBOSE:
+	if verbose:
 		print("Document Term Matrix created")
 
 	# split data into train-test split
-	X_train, X_test, y_train, y_test = train_test_split(dtm, labels, test_size=TEST_SZ)
-	if VERBOSE:
+	X_train, X_test, y_train, y_test = train_test_split(dtm, labels, test_size=test_sz)
+	if verbose:
 		print("Data split into test and train")
 
 	# create the models we want to use and run
