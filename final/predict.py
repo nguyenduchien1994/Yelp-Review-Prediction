@@ -118,7 +118,6 @@ def accuracy(preds, labels):
 	return (float(count)/float(total))
 
 def model_eval(classifier, x_train, x_test, y_train, y_test):
-	classifier = LinearSVC()
 	classifier.fit(x_train, y_train)
 	preds = classifier.predict(x_test)
 	print(" Accuracy || MSE\n%.4f%13.4f" % (accuracy(preds, y_test), mean_squared_error(y_test, preds)))
