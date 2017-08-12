@@ -6,8 +6,8 @@
 system("clear");
 
 $script       = "./predict.py";
-@reviewCounts = (500, 5000, 10000, 15000, 25000, 50000);
-$iters        = 10;
+@reviewCounts = (5000, 10000, 25000, 50000);
+$iters        = 5;
 
 print "Running Yelp Review Predictions\n";
 
