@@ -18,7 +18,7 @@ cities = ['Phoenix']
 # Business dataset
 ids = []
 business_info = []
-with open('../yelp_academic_dataset_business.json') as business_json:
+with open('yelp_academic_dataset_business.json') as business_json:
     for line in business_json:
         business = json.loads(line)
         if business['city'] in cities:
@@ -29,7 +29,7 @@ with open('../yelp_academic_dataset_business.json') as business_json:
         
 # Review dataset
 review_info = []
-with open('../yelp_academic_dataset_review.json') as review_json:
+with open('yelp_academic_dataset_review.json') as review_json:
     for line in review_json:
         review = json.loads(line)
         if review['business_id'] in ids:
@@ -41,4 +41,4 @@ with open('../yelp_academic_dataset_review.json') as review_json:
 review_info = pd.DataFrame(review_info)
 
 # Save to CSV
-review_info.to_csv('reviews.csv', index=False)
+review_info.to_csv('reviews.csv', index=False, encoding='ISO-8859-1')
