@@ -46,6 +46,10 @@ This is the project report.  It only needs to be opened in some pdf viewer.
 
 ------------------------------------
 
+You can find the information and download the Yelp Dataset Challenge [here](https://www.yelp.com/dataset_challenge/).
+
+------------------------------------
+
 Thank you Professor Chin and Xiao for teaching this class
 
 -John, Sherman, and Hien
