@@ -46,7 +46,7 @@ This is the project report.  It only needs to be opened in some pdf viewer.
 
 ------------------------------------
 
-You can find the information and download the Yelp Dataset Challenge [here](https://www.yelp.com/dataset_challenge/).
+You can find the information and download the Yelp Dataset Challenge under https://www.yelp.com/dataset_challenge/
 
 ------------------------------------
 
